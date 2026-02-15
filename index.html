@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KuwaitHelperConnect | Worker Marketplace</title>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/css/intlTelInput.css">
+    
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/js/intlTelInput.min.js"></script>
+
+    <style>
+        :root { --primary: #00b894; --dark: #2d3436; --light: #f4f7f6; --white: #ffffff; --whatsapp: #25D366; --error: #d63031; --gold: #f1c40f; }
+        * { box-sizing: border-box; font-family: 'Segoe UI', sans-serif; transition: all 0.2s ease; }
+        body { margin: 0; background: var(--light); padding-top: 80px; display: flex; flex-direction: column; min-height: 100vh; }
+
+        header { background: var(--white); padding: 0 5%; height: 70px; display: flex; justify-content: space-between; align-items: center; position: fixed; top: 0; width: 100%; box-shadow: 0 2px 10px rgba(0,0,0,0.1); z-index: 1000; }
+        .logo-text { font-weight: bold; color: var(--primary); font-size: 1.4rem; text-decoration: none; }
+        
+        .container { max-width: 1100px; margin: auto; padding: 20px; flex: 1; width: 100%; }
+        
+        .search-bar { background: white; padding: 20px; border-radius: 12px; margin-bottom: 30px; display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        
+        .worker-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; }
+        .worker-card { background: white; padding: 1.5rem; border-radius: 12px; border-top: 5px solid var(--primary); box-shadow: 0 4px 6px rgba(0,0,0,0.05); position: relative; }
+        
+        input, select, textarea { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 0.95rem; }
+        .btn-main { background: var(--primary); color: white; border: none; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; }
+        .btn-outline { border: 2px solid var(--primary); color: var(--primary); background: transparent; padding: 10px; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        .btn-danger { background: var(--error); color: white; border: none; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: bold; margin-top: 10px; width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; }
+
+        .day-selector { display: flex; flex-wrap: wrap; gap: 5px; margin: 10px 0; }
+        .day-btn { padding: 8px 10px; border: 1px solid #ddd; background: white; border-radius: 5px; cursor: pointer; font-size: 0.8rem; flex: 1; text-align: center; }
+        .day-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+        .day-tag { font-size: 0.7rem; padding: 2px 6px; background: #eee; border-radius: 4px; margin-right: 3px; }
+        .day-tag.active { background: var(--primary); color: white; }
+
+        #auth-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 2000; display: none; justify-content: center; align-items: center; padding: 20px; }
+        .modal-card { background: white; padding: 2rem; border-radius: 15px; width: 100%; max-width: 450px; position: relative; }
+        .hidden { display: none !important; }
+        .tag { background: #e0f7f3; color: var(--primary); padding: 4px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: bold; }
+
+        .request-box { background: #fff3cd; border: 2px dashed #ffeeba; padding: 30px; border-radius: 15px; margin-top: 50px; text-align: center; }
+        .request-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; text-align: left; margin-bottom: 15px; }
+        @media (max-width: 600px) { .request-form-grid { grid-template-columns: 1fr; } }
+        .iti { width: 100%; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo-text">KuwaitHelperConnect</div>
+        <div style="display:flex; gap:10px;">
+            <button id="nav-btn-main" class="btn-main" onclick="handleNavClick()">Login / Register</button>
+            <button id="nav-btn-logout" class="btn-main hidden" style="background:var(--dark);" onclick="logout()">Logout</button>
+        </div>
+    </header>
+
+    <div class="container">
+        
+        <section id="profile-section" class="hidden">
+            <div style="background:white; padding:2rem; border-radius:15px; border:2px solid var(--primary); margin-bottom:30px;">
+                <h3 style="margin-top:0;"><i class="fa-solid fa-user-pen"></i> My Worker Listing</h3>
+                <form id="profileForm">
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; margin-bottom: 10px;">
+                        <input type="text" id="upd-name" placeholder="Full Name" required>
+                        <select id="upd-gender">
+                            <option value="Female">Female</option>
+                            <option value="Male">Male</option>
+                        </select>
+                    </div>
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; margin-bottom: 10px;">
+                        <select id="upd-nationality">
+                            <option value="Filipino">Filipino</option>
+                            <option value="Indian">Indian</option>
+                            <option value="Sri Lankan">Sri Lankan</option>
+                            <option value="Ethiopian">Ethiopian</option>
+                            <option value="Nepalese">Nepalese</option>
+                            <option value="Bengali">Bengali</option>
+                            <option value="African">African</option>
+                            <option value="Other">Other</option>
+                        </select>
+                        <select id="upd-skill">
+                            <option value="House Cleaning">House Cleaning</option>
+                            <option value="Cooking">Cooking</option>
+                            <option value="Childcare / Nanny">Childcare / Nanny</option>
+                            <option value="Private Driver">Private Driver</option>
+                            <option value="Elderly Care">Elderly Care</option>
+                        </select>
+                    </div>
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; margin-bottom: 10px;">
+                        <select id="upd-workType">
+                            <option value="Full-time">Full-time</option>
+                            <option value="Part-time">Part-time</option>
+                        </select>
+                        <select id="upd-location">
+                            <option value="Salmiya">Salmiya</option>
+                            <option value="Hawally">Hawally</option>
+                            <option value="Kuwait City">Kuwait City</option>
+                            <option value="Farwaniya">Farwaniya</option>
+                        </select>
+                    </div>
+                    <div style="background: #f9f9f9; padding: 15px; border-radius: 10px; margin: 10px 0;">
+                        <h4 style="margin:0 0 10px 0;"><i class="fa-solid fa-calendar-check"></i> Availability</h4>
+                        <div class="day-selector">
+                            <button type="button" class="day-btn" data-day="Sat">Sat</button>
+                            <button type="button" class="day-btn" data-day="Sun">Sun</button>
+                            <button type="button" class="day-btn" data-day="Mon">Mon</button>
+                            <button type="button" class="day-btn" data-day="Tue">Tue</button>
+                            <button type="button" class="day-btn" data-day="Wed">Wed</button>
+                            <button type="button" class="day-btn" data-day="Thu">Thu</button>
+                            <button type="button" class="day-btn" data-day="Fri">Fri</button>
+                        </div>
+                        <input type="text" id="upd-hours" placeholder="Hours (e.g. 8 AM - 2 PM)">
+                    </div>
+                    <input type="tel" id="upd-phone">
+                    <button type="submit" class="btn-main" style="margin-top:20px; width:100%;">Update & Publish Listing</button>
+                </form>
+                <button class="btn-danger" onclick="removeListing()">Remove My Listing</button>
+            </div>
+            <hr style="border: 0; border-top: 2px solid #ddd; margin: 40px 0;">
+        </section>
+
+        <div id="marketplace-view">
+            <h2 style="margin-bottom: 20px;"><i class="fa-solid fa-users"></i> Available Helpers in Kuwait</h2>
+            <div class="search-bar">
+                <input type="text" id="search-name" placeholder="Search name..." oninput="filterWorkers()">
+                <select id="filter-skill" onchange="filterWorkers()">
+                    <option value="">All Skills</option>
+                    <option value="House Cleaning">House Cleaning</option>
+                    <option value="Cooking">Cooking</option>
+                    <option value="Childcare / Nanny">Childcare / Nanny</option>
+                    <option value="Private Driver">Private Driver</option>
+                </select>
+                <select id="filter-nation" onchange="filterWorkers()">
+                    <option value="">All Nations</option>
+                    <option value="Filipino">Filipino</option>
+                    <option value="Indian">Indian</option>
+                    <option value="Sri Lankan">Sri Lankan</option>
+                    <option value="Ethiopian">Ethiopian</option>
+                    <option value="Nepalese">Nepalese</option>
+                </select>
+                <select id="filter-loc" onchange="filterWorkers()">
+                    <option value="">All Areas</option>
+                    <option value="Salmiya">Salmiya</option>
+                    <option value="Hawally">Hawally</option>
+                    <option value="Kuwait City">Kuwait City</option>
+                    <option value="Farwaniya">Farwaniya</option>
+                </select>
+                <select id="filter-gender" onchange="filterWorkers()">
+                    <option value="">All Genders</option>
+                    <option value="Female">Female</option>
+                    <option value="Male">Male</option>
+                </select>
+            </div>
+
+            <div id="workerList" class="worker-grid"></div>
+
+            <div class="request-box" id="custom-request-section">
+                <h3 style="color: #856404;"><i class="fa-solid fa-magnifying-glass-plus"></i> Can't find the right worker?</h3>
+                <p>Submit your requirements. No sign-in required.</p>
+                
+                <div style="max-width: 600px; margin: 20px auto;">
+                    <div class="request-form-grid">
+                        <div>
+                            <label style="font-size: 0.8rem; font-weight: bold;">Category</label>
+                            <select id="req-skill">
+                                <option value="House Cleaning">House Cleaning</option>
+                                <option value="Cooking">Cooking</option>
+                                <option value="Childcare / Nanny">Childcare / Nanny</option>
+                                <option value="Private Driver">Private Driver</option>
+                                <option value="Elderly Care">Elderly Care</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="font-size: 0.8rem; font-weight: bold;">Nationality Preference</label>
+                            <select id="req-nation">
+                                <option value="Any">Any Nationality</option>
+                                <option value="Filipino">Filipino</option>
+                                <option value="Indian">Indian</option>
+                                <option value="Sri Lankan">Sri Lankan</option>
+                                <option value="Ethiopian">Ethiopian</option>
+                                <option value="Nepalese">Nepalese</option>
+                                <option value="African">African</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="font-size: 0.8rem; font-weight: bold;">Gender</label>
+                            <select id="req-gender">
+                                <option value="Female">Female</option>
+                                <option value="Male">Male</option>
+                                <option value="No Preference">No Preference</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="font-size: 0.8rem; font-weight: bold;">Work Type</label>
+                            <select id="req-type">
+                                <option value="Full-time">Full-time</option>
+                                <option value="Part-time">Part-time</option>
+                                <option value="Live-in">Live-in</option>
+                                <option value="Live-out">Live-out</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div style="text-align: left; margin-bottom: 15px;">
+                        <label style="font-size: 0.8rem; font-weight: bold;">Working Hours / Schedule</label>
+                        <input type="text" id="req-schedule" placeholder="e.g. 8 AM to 4 PM, Sat to Thu">
+                    </div>
+
+                    <div style="text-align: left; margin-bottom: 15px;">
+                        <label style="font-size: 0.8rem; font-weight: bold;">Additional Requirements</label>
+                        <textarea id="req-description" rows="3" placeholder="Special skills needed..."></textarea>
+                    </div>
+
+                    <div style="text-align: left; margin-bottom: 15px;">
+                        <label style="font-size: 0.8rem; font-weight: bold;">Your Contact Number</label>
+                        <input type="tel" id="req-phone">
+                    </div>
+
+                    <button class="btn-main" onclick="submitCustomRequest()" style="width: 100%; padding: 15px; font-size: 1.1rem;">
+                        Submit Special Request
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="auth-overlay">
+        <div class="modal-card">
+            <button onclick="closeAuth()" style="position:absolute; right:15px; top:15px; border:none; background:none; font-size:1.5rem; cursor:pointer;">&times;</button>
+            <div id="auth-ui">
+                <h2 id="auth-title" style="text-align:center">Worker Registration</h2>
+                <p id="auth-error" style="color:var(--error); text-align:center; font-size:0.8rem;"></p>
+                <input type="email" id="auth-email" placeholder="Email Address">
+                <input type="password" id="auth-password" placeholder="Password" style="margin-top:10px;">
+                <button class="btn-main" onclick="executeAuth()" style="width:100%; margin-top:15px;">Continue</button>
+                <p onclick="toggleAuthMode()" id="toggle-text" style="cursor:pointer; color:var(--primary); text-align:center; margin-top:15px;">Need an account? Sign Up</p>
+            </div>
+        </div>
+    </div>
+
+    <footer style="background: var(--dark); color: white; padding: 60px 5% 30px; margin-top: 80px;">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 40px; border-bottom: 1px solid #444; padding-bottom: 40px; max-width: 1100px; margin: 0 auto;">
+            <div>
+                <h3 style="color: var(--primary); margin-bottom: 20px;">KuwaitHelperConnect</h3>
+                <p style="font-size: 0.9rem; line-height: 1.8; color: #bbb;">
+                    Marketplace for home help in Kuwait.
+                </p>
+            </div>
+            <div>
+                <h4 style="color: var(--gold); margin-bottom: 20px;"><i class="fa-solid fa-scale-balanced"></i> Kuwait Labor Laws</h4>
+                <ul style="list-style: none; padding: 0; font-size: 0.85rem; color: #bbb; line-height: 2;">
+                    <li><i class="fa-solid fa-check" style="color:var(--primary)"></i> 12 hours maximum daily work</li>
+                    <li><i class="fa-solid fa-check" style="color:var(--primary)"></i> 1 full paid day off per week</li>
+                    <li><i class="fa-solid fa-check" style="color:var(--primary)"></i> 30 days paid annual leave</li>
+                </ul>
+            </div>
+        </div>
+        <div style="text-align: center; padding-top: 30px; font-size: 0.8rem; color: #777;">
+            <p>&copy; 2026 Mango Company. All Rights Reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyAdRm7tPX0GQ6akhD8z6qj-Uq5JoGkvrfM",
+            authDomain: "helloapp-4608d.firebaseapp.com",
+            projectId: "helloapp-4608d",
+            storageBucket: "helloapp-4608d.firebasestorage.app",
+            databaseURL: "https://helloapp-4608d-default-rtdb.firebaseio.com"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.database();
+
+        // Initialize Phone Inputs
+        const workerPhone = window.intlTelInput(document.querySelector("#upd-phone"), {
+            initialCountry: "kw",
+            utilsScript: "https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/js/utils.js"
+        });
+
+        const reqPhoneInput = window.intlTelInput(document.querySelector("#req-phone"), {
+            initialCountry: "kw",
+            utilsScript: "https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/js/utils.js"
+        });
+
+        let allWorkers = [];
+        let isSignUp = false;
+        let selectedDays = [];
+
+        document.querySelectorAll('.day-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                btn.classList.toggle('active');
+                const day = btn.getAttribute('data-day');
+                if (selectedDays.includes(day)) {
+                    selectedDays = selectedDays.filter(d => d !== day);
+                } else {
+                    selectedDays.push(day);
+                }
+            });
+        });
+
+        window.closeAuth = () => document.getElementById('auth-overlay').style.display = 'none';
+        
+        window.toggleAuthMode = () => {
+            isSignUp = !isSignUp;
+            document.getElementById('auth-title').innerText = isSignUp ? "Create Account" : "Login";
+            document.getElementById('toggle-text').innerText = isSignUp ? "Already have an account? Login" : "Need an account? Sign Up";
+        };
+
+        window.handleNavClick = () => {
+            if (!auth.currentUser) {
+                document.getElementById('auth-overlay').style.display = 'flex';
+            }
+        };
+
+        window.executeAuth = () => {
+            const email = document.getElementById('auth-email').value;
+            const pass = document.getElementById('auth-password').value;
+            if (isSignUp) {
+                auth.createUserWithEmailAndPassword(email, pass)
+                    .then(() => { closeAuth(); })
+                    .catch(e => document.getElementById('auth-error').innerText = e.message);
+            } else {
+                auth.signInWithEmailAndPassword(email, pass)
+                    .then(() => closeAuth())
+                    .catch(e => document.getElementById('auth-error').innerText = "Login failed.");
+            }
+        };
+
+        function loadWorkerProfile(uid) {
+            db.ref('workers/' + uid).once('value', snap => {
+                const w = snap.val();
+                if(w) {
+                    document.getElementById('upd-name').value = w.name || "";
+                    document.getElementById('upd-gender').value = w.gender || "Female";
+                    document.getElementById('upd-nationality').value = w.nationality || "Filipino";
+                    document.getElementById('upd-skill').value = w.skill || "House Cleaning";
+                    document.getElementById('upd-workType').value = w.workType || "Full-time";
+                    document.getElementById('upd-location').value = w.location || "Salmiya";
+                    document.getElementById('upd-hours').value = w.availableHours || "";
+                    workerPhone.setNumber(w.phone || "");
+                    
+                    selectedDays = w.availableDays || [];
+                    document.querySelectorAll('.day-btn').forEach(btn => {
+                        if(selectedDays.includes(btn.getAttribute('data-day'))) {
+                            btn.classList.add('active');
+                        }
+                    });
+                }
+            });
+        }
+
+        document.getElementById('profileForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const user = auth.currentUser;
+            if(!user) return;
+
+            const workerData = {
+                name: document.getElementById('upd-name').value,
+                gender: document.getElementById('upd-gender').value,
+                nationality: document.getElementById('upd-nationality').value,
+                skill: document.getElementById('upd-skill').value,
+                workType: document.getElementById('upd-workType').value,
+                location: document.getElementById('upd-location').value,
+                availableDays: selectedDays,
+                availableHours: document.getElementById('upd-hours').value,
+                phone: workerPhone.getNumber(),
+                updatedAt: Date.now()
+            };
+
+            db.ref('workers/' + user.uid).set(workerData).then(() => {
+                alert("Profile Updated Successfully!");
+            }).catch(err => alert("Error: " + err.message));
+        });
+
+        window.removeListing = () => {
+            if(confirm("Remove your listing from the marketplace?")) {
+                db.ref('workers/' + auth.currentUser.uid).remove().then(() => {
+                    alert("Listing removed.");
+                    location.reload();
+                });
+            }
+        };
+
+        window.submitCustomRequest = () => {
+            const phone = reqPhoneInput.getNumber();
+            if(!reqPhoneInput.isValidNumber()) return alert("Please enter a valid phone number.");
+
+            const requestData = {
+                category: document.getElementById('req-skill').value,
+                nationality: document.getElementById('req-nation').value,
+                gender: document.getElementById('req-gender').value,
+                workType: document.getElementById('req-type').value,
+                schedule: document.getElementById('req-schedule').value,
+                description: document.getElementById('req-description').value,
+                contact: phone,
+                timestamp: Date.now()
+            };
+
+            db.ref('customRequests').push(requestData).then(() => {
+                alert("Request submitted! We will contact you soon.");
+                document.getElementById('req-schedule').value = "";
+                document.getElementById('req-description').value = "";
+                document.getElementById('req-phone').value = "";
+            }).catch(err => alert("Error: " + err.message));
+        };
+
+        db.ref('workers').on('value', snap => {
+            allWorkers = [];
+            snap.forEach(child => { 
+                let worker = child.val();
+                worker.id = child.key;
+                allWorkers.push(worker); 
+            });
+            renderWorkers(allWorkers);
+        });
+
+        function renderWorkers(data) {
+            const grid = document.getElementById('workerList');
+            grid.innerHTML = data.length ? "" : "<p style='grid-column: 1/-1; text-align:center;'>No listings match your search.</p>";
+            data.forEach(w => {
+                const dayHtml = ["Sat", "Sun", "Mon", "Tue", "Wed", "Thu", "Fri"].map(d => {
+                    const active = w.availableDays && w.availableDays.includes(d) ? 'active' : '';
+                    return `<span class="day-tag ${active}">${d}</span>`;
+                }).join('');
+
+                grid.innerHTML += `
+                    <div class="worker-card">
+                        <div style="display:flex; justify-content:space-between;">
+                            <h3 style="margin:0">${w.name}</h3>
+                            <span class="tag">${w.skill}</span>
+                        </div>
+                        <p style="font-size:0.85rem; color:#666; margin: 5px 0;">
+                            <i class="fa-solid fa-earth-americas"></i> ${w.nationality} • <i class="fa-solid fa-clock"></i> ${w.workType}
+                        </p>
+                        <p style="font-size:0.85rem; color:#666; margin-bottom: 10px;">
+                            <i class="fa-solid fa-location-dot"></i> ${w.location}
+                        </p>
+                        <div style="border-top: 1px solid #eee; padding-top: 10px;">
+                            <div style="margin-bottom:5px;">${dayHtml}</div>
+                            <p style="font-size:0.7rem; color:#888;"><i class="fa-regular fa-clock"></i> ${w.availableHours || 'Contact for hours'}</p>
+                        </div>
+                        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top:15px;">
+                            <a href="tel:${w.phone}" class="btn-main" style="background:var(--dark)"><i class="fa-solid fa-phone"></i> Call</a>
+                            <a href="https://wa.me/${w.phone ? w.phone.replace('+','') : ''}" target="_blank" class="btn-main" style="background:var(--whatsapp)"><i class="fa-brands fa-whatsapp"></i> WhatsApp</a>
+                        </div>
+                    </div>`;
+            });
+        }
+
+        window.filterWorkers = () => {
+            const nameQ = document.getElementById('search-name').value.toLowerCase();
+            const skillQ = document.getElementById('filter-skill').value;
+            const nationQ = document.getElementById('filter-nation').value;
+            const locQ = document.getElementById('filter-loc').value;
+            const genQ = document.getElementById('filter-gender').value;
+
+            const filtered = allWorkers.filter(w => {
+                return (w.name?.toLowerCase().includes(nameQ)) && 
+                       (skillQ === "" || w.skill === skillQ) &&
+                       (nationQ === "" || w.nationality === nationQ) &&
+                       (genQ === "" || w.gender === genQ) &&
+                       (locQ === "" || w.location === locQ);
+            });
+            renderWorkers(filtered);
+        };
+
+        window.logout = () => auth.signOut().then(() => location.reload());
+
+        auth.onAuthStateChanged(user => {
+            if (user) {
+                document.getElementById('nav-btn-main').innerText = "My Profile Info";
+                document.getElementById('nav-btn-logout').classList.remove('hidden');
+                document.getElementById('profile-section').classList.remove('hidden');
+                loadWorkerProfile(user.uid);
+            } else {
+                document.getElementById('nav-btn-main').innerText = "Login / Register";
+                document.getElementById('nav-btn-logout').classList.add('hidden');
+                document.getElementById('profile-section').classList.add('hidden');
+            }
+        });
+    </script>
+</body>
+</html>
