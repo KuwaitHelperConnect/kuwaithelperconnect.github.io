@@ -7,7 +7,7 @@
     
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/css/intlTelInput.css">
-    
+    <link rel="icon" href="logo.png" type="image/png">
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
@@ -23,6 +23,7 @@
         
         .container { max-width: 1100px; margin: auto; padding: 20px; flex: 1; width: 100%; }
         
+        /* Responsive Search Bar */
         .search-bar { background: white; padding: 20px; border-radius: 12px; margin-bottom: 30px; display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
         
         .worker-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; }
@@ -34,9 +35,9 @@
         .btn-danger { background: var(--error); color: white; border: none; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: bold; margin-top: 10px; width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; }
 
         .day-selector { display: flex; flex-wrap: wrap; gap: 5px; margin: 10px 0; }
-        .day-btn { padding: 8px 10px; border: 1px solid #ddd; background: white; border-radius: 5px; cursor: pointer; font-size: 0.8rem; flex: 1; text-align: center; }
+        .day-btn { padding: 8px 10px; border: 1px solid #ddd; background: white; border-radius: 5px; cursor: pointer; font-size: 0.8rem; flex: 1; min-width: 45px; text-align: center; }
         .day-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
-        .day-tag { font-size: 0.7rem; padding: 2px 6px; background: #eee; border-radius: 4px; margin-right: 3px; }
+        .day-tag { font-size: 0.7rem; padding: 2px 6px; background: #eee; border-radius: 4px; margin-right: 3px; display: inline-block; margin-top: 2px; }
         .day-tag.active { background: var(--primary); color: white; }
 
         #auth-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 2000; display: none; justify-content: center; align-items: center; padding: 20px; }
@@ -46,7 +47,26 @@
 
         .request-box { background: #fff3cd; border: 2px dashed #ffeeba; padding: 30px; border-radius: 15px; margin-top: 50px; text-align: center; }
         .request-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; text-align: left; margin-bottom: 15px; }
-        @media (max-width: 600px) { .request-form-grid { grid-template-columns: 1fr; } }
+        
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 10px; }
+
+        /* --- RESPONSIVE ADJUSTMENTS --- */
+        @media (max-width: 768px) {
+            header { padding: 0 3%; }
+            .logo-text { font-size: 1.1rem; }
+            .btn-main { padding: 8px 12px; font-size: 0.85rem; }
+            .form-row { grid-template-columns: 1fr; }
+            .worker-grid { grid-template-columns: 1fr; }
+            .search-bar { grid-template-columns: 1fr 1fr; }
+        }
+
+        @media (max-width: 480px) {
+            .search-bar { grid-template-columns: 1fr; }
+            .logo-text { font-size: 0.9rem; }
+            .request-form-grid { grid-template-columns: 1fr; }
+            .day-btn { font-size: 0.7rem; padding: 6px 4px; }
+        }
+
         .iti { width: 100%; margin-bottom: 10px; }
     </style>
 </head>
@@ -55,7 +75,7 @@
     <header>
         <div class="logo-text">KuwaitHelperConnect</div>
         <div style="display:flex; gap:10px;">
-            <button id="nav-btn-main" class="btn-main" onclick="handleNavClick()">Login / Register</button>
+            <button id="nav-btn-main" class="btn-main" onclick="handleNavClick()">Login</button>
             <button id="nav-btn-logout" class="btn-main hidden" style="background:var(--dark);" onclick="logout()">Logout</button>
         </div>
     </header>
@@ -63,17 +83,17 @@
     <div class="container">
         
         <section id="profile-section" class="hidden">
-            <div style="background:white; padding:2rem; border-radius:15px; border:2px solid var(--primary); margin-bottom:30px;">
+            <div style="background:white; padding:1.5rem; border-radius:15px; border:2px solid var(--primary); margin-bottom:30px;">
                 <h3 style="margin-top:0;"><i class="fa-solid fa-user-pen"></i> My Worker Listing</h3>
                 <form id="profileForm">
-                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; margin-bottom: 10px;">
+                    <div class="form-row">
                         <input type="text" id="upd-name" placeholder="Full Name" required>
                         <select id="upd-gender">
                             <option value="Female">Female</option>
                             <option value="Male">Male</option>
                         </select>
                     </div>
-                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; margin-bottom: 10px;">
+                    <div class="form-row">
                         <select id="upd-nationality">
                             <option value="Filipino">Filipino</option>
                             <option value="Indian">Indian</option>
@@ -92,7 +112,7 @@
                             <option value="Elderly Care">Elderly Care</option>
                         </select>
                     </div>
-                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; margin-bottom: 10px;">
+                    <div class="form-row">
                         <select id="upd-workType">
                             <option value="Full-time">Full-time</option>
                             <option value="Part-time">Part-time</option>
@@ -115,7 +135,7 @@
                             <button type="button" class="day-btn" data-day="Thu">Thu</button>
                             <button type="button" class="day-btn" data-day="Fri">Fri</button>
                         </div>
-                        <input type="text" id="upd-hours" placeholder="Hours (e.g. 8 AM - 2 PM)">
+                        <input type="text" id="upd-hours" placeholder="Hours (e.g. 8 AM - 2 PM)" style="margin-top:10px;">
                     </div>
                     <input type="tel" id="upd-phone">
                     <button type="submit" class="btn-main" style="margin-top:20px; width:100%;">Update & Publish Listing</button>
@@ -126,7 +146,7 @@
         </section>
 
         <div id="marketplace-view">
-            <h2 style="margin-bottom: 20px;"><i class="fa-solid fa-users"></i> Available Helpers in Kuwait</h2>
+            <h2 style="margin-bottom: 20px;"><i class="fa-solid fa-users"></i> Available Helpers</h2>
             <div class="search-bar">
                 <input type="text" id="search-name" placeholder="Search name..." oninput="filterWorkers()">
                 <select id="filter-skill" onchange="filterWorkers()">
@@ -244,18 +264,16 @@
         </div>
     </div>
 
-    <footer style="background: var(--dark); color: white; padding: 60px 5% 30px; margin-top: 80px;">
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 40px; border-bottom: 1px solid #444; padding-bottom: 40px; max-width: 1100px; margin: 0 auto;">
+    <footer style="background: var(--dark); color: white; padding: 40px 5% 30px; margin-top: 80px;">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 40px; border-bottom: 1px solid #444; padding-bottom: 40px; max-width: 1100px; margin: 0 auto;">
             <div>
                 <h3 style="color: var(--primary); margin-bottom: 20px;">KuwaitHelperConnect</h3>
-                <p style="font-size: 0.9rem; line-height: 1.8; color: #bbb;">
-                    Marketplace for home help in Kuwait.
-                </p>
+                <p style="font-size: 0.9rem; line-height: 1.8; color: #bbb;">Marketplace for home help in Kuwait.</p>
             </div>
             <div>
                 <h4 style="color: var(--gold); margin-bottom: 20px;"><i class="fa-solid fa-scale-balanced"></i> Kuwait Labor Laws</h4>
                 <ul style="list-style: none; padding: 0; font-size: 0.85rem; color: #bbb; line-height: 2;">
-                    <li><i class="fa-solid fa-check" style="color:var(--primary)"></i> 12 hours maximum daily work</li>
+                    <li><i class="fa-solid fa-check" style="color:var(--primary)"></i> 12 hours max daily work</li>
                     <li><i class="fa-solid fa-check" style="color:var(--primary)"></i> 1 full paid day off per week</li>
                     <li><i class="fa-solid fa-check" style="color:var(--primary)"></i> 30 days paid annual leave</li>
                 </ul>
@@ -278,7 +296,6 @@
         const auth = firebase.auth();
         const db = firebase.database();
 
-        // Initialize Phone Inputs
         const workerPhone = window.intlTelInput(document.querySelector("#upd-phone"), {
             initialCountry: "kw",
             utilsScript: "https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/js/utils.js"
@@ -432,19 +449,19 @@
 
                 grid.innerHTML += `
                     <div class="worker-card">
-                        <div style="display:flex; justify-content:space-between;">
-                            <h3 style="margin:0">${w.name}</h3>
-                            <span class="tag">${w.skill}</span>
+                        <div style="display:flex; justify-content:space-between; align-items: flex-start; gap: 10px;">
+                            <h3 style="margin:0; font-size: 1.1rem;">${w.name}</h3>
+                            <span class="tag" style="white-space: nowrap;">${w.skill}</span>
                         </div>
-                        <p style="font-size:0.85rem; color:#666; margin: 5px 0;">
+                        <p style="font-size:0.85rem; color:#666; margin: 10px 0;">
                             <i class="fa-solid fa-earth-americas"></i> ${w.nationality} • <i class="fa-solid fa-clock"></i> ${w.workType}
                         </p>
-                        <p style="font-size:0.85rem; color:#666; margin-bottom: 10px;">
+                        <p style="font-size:0.85rem; color:#666; margin-bottom: 15px;">
                             <i class="fa-solid fa-location-dot"></i> ${w.location}
                         </p>
                         <div style="border-top: 1px solid #eee; padding-top: 10px;">
-                            <div style="margin-bottom:5px;">${dayHtml}</div>
-                            <p style="font-size:0.7rem; color:#888;"><i class="fa-regular fa-clock"></i> ${w.availableHours || 'Contact for hours'}</p>
+                            <div style="margin-bottom:8px;">${dayHtml}</div>
+                            <p style="font-size:0.75rem; color:#888;"><i class="fa-regular fa-clock"></i> ${w.availableHours || 'Contact for hours'}</p>
                         </div>
                         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top:15px;">
                             <a href="tel:${w.phone}" class="btn-main" style="background:var(--dark)"><i class="fa-solid fa-phone"></i> Call</a>
@@ -475,12 +492,12 @@
 
         auth.onAuthStateChanged(user => {
             if (user) {
-                document.getElementById('nav-btn-main').innerText = "My Profile Info";
+                document.getElementById('nav-btn-main').innerText = "My Profile";
                 document.getElementById('nav-btn-logout').classList.remove('hidden');
                 document.getElementById('profile-section').classList.remove('hidden');
                 loadWorkerProfile(user.uid);
             } else {
-                document.getElementById('nav-btn-main').innerText = "Login / Register";
+                document.getElementById('nav-btn-main').innerText = "Login";
                 document.getElementById('nav-btn-logout').classList.add('hidden');
                 document.getElementById('profile-section').classList.add('hidden');
             }
